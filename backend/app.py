@@ -1,33 +1,43 @@
+
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
 import io
-import random
 import torchvision.models as models
+import torch.nn as nn
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for React frontend
 
-# Load models
-model_ids = {
-    "resnet50": {
-        "path":torch.load(r"C:\Users\SANJITHA\Projects\HPE\backend\models\resnet50_model.pth", map_location="cpu"),
-        "model": models.mobilenet_v2()
-        }
-    
-}
-
-# Define image preprocessing
+# Define transformations (matching training pipeline)
 transform = transforms.Compose([
-        transforms.Resize((224, 224)),  # Resize to 224x224
-        transforms.RandomHorizontalFlip(p=0.5),  # Flip 50% of the time
-        transforms.ColorJitter(
-            brightness=random.uniform(0.85, 1.15),  # Brightness: 85%-115% (avoid extreme brightness)
-            contrast=random.uniform(0.85, 1.15)  # Contrast: 85%-115% (avoid too much darkness/brightness)
-        ),
-    ])
+    transforms.Resize((224, 224)),  # Resize to match MobileNetV2 input size
+    transforms.ToTensor(),  # Convert image to tensor
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize as per ImageNet standards
+])
+
+# Define the Custom MobileNetV2 Model
+class CustomMobileNet(nn.Module):
+    def __init__(self):
+        super(CustomMobileNet, self).__init__()
+        self.mobilenet = models.mobilenet_v2()
+        self.mobilenet.classifier = nn.Sequential(
+            nn.Linear(1280, 256),
+            nn.ReLU(),
+            nn.Linear(256, 2)  # 2 Classes: Defectless & Defective
+        )
+
+    def forward(self, x):
+        return self.mobilenet(x)
+
+# Load trained model
+MODEL_PATH = r"C:\Users\SANJITHA\Projects\HPE\LaptopDefectDetection\backend\models\mobilenetv2_model.pth"
+model = CustomMobileNet()
+model.load_state_dict(torch.load(MODEL_PATH, map_location="cpu"))
+model.eval()  # Set model to evaluation mode
 
 @app.route("/")
 def hello():
@@ -35,31 +45,23 @@ def hello():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    if "image" not in request.files or "model" not in request.form:
-        print("No image found")
-        return jsonify({"error": "Missing image or model selection"}), 400
+    if "image" not in request.files:
+        return jsonify({"error": "No image provided"}), 400
 
     file = request.files["image"]
-    model_name = request.form["model"]
+    
+    # Load and preprocess the image
+    image = Image.open(io.BytesIO(file.read())).convert("RGB")
+    image = transform(image).unsqueeze(0)  # Add batch dimension
 
-    if model_name not in model_ids:
-        return jsonify({"error": "Invalid model selection"}), 400
-
-    # Load image
-    image = Image.open(io.BytesIO(file.read()))
-    image = transform(image)  # Add batch dimension
-    print(model_name)
     # Get prediction
-    model = model_ids[model_name]["model"]
-    model.load_state_dict(model_ids[model_name]["path"])
-    model.eval()
     with torch.no_grad():
         output = model(image)
-
-    # Example: Assume 0 = No defect, 1 = Defect
+    
+    # Convert model output to label
     predicted_class = "Defective Laptop" if torch.argmax(output) == 1 else "No Defect"
 
     return jsonify({"prediction": predicted_class})
 
 if __name__ == "__main__":
-    app.run(debug=True,port=5000)
+    app.run(debug=True, port=5000)
