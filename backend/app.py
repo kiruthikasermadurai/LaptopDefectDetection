@@ -36,7 +36,7 @@ class CustomMobileNet(nn.Module):
 
 # Load trained model
 MODEL_NAME = "MobileNetV2"
-MODEL_PATH = r"C:\Users\SANJITHA\Projects\HPE\LaptopDefectDetection\backend\models\mobilenetv2_model.pth"
+MODEL_PATH = "models\mobilenetv2_model.pth"
 model = CustomMobileNet()
 model.load_state_dict(torch.load(MODEL_PATH, map_location="cpu"))
 model.eval()  # Set model to evaluation mode
@@ -73,4 +73,4 @@ def predict():
     })
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000, host="0.0.0.0")
+    app.run(host="0.0.0.0", debug = False,port=5000)
