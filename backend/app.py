@@ -126,8 +126,13 @@ def process_image(image_file, model):
 
 @app.route("/")
 def hello():
+    return "Hello from Defect Detection API "
     return "Hello"
 
+@app.route("/api/detect", methods=["POST"])
+def detect_single():
+    if "image" not in request.files or "model_name" not in request.form:
+        return jsonify({"error": "Missing image or model_name"}), 400
 @app.route("/api/detect", methods=["POST"])
 def detect_single():
     if "image" not in request.files or "model_name" not in request.form:
@@ -165,6 +170,6 @@ def detect_batch():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
-
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
 
