@@ -51,7 +51,7 @@ function App() {
 
     try {
       const endpoint = image ? '/api/detect' : '/api/detect/batch';
-      const response = await axios.post(`http://localhost:5000${endpoint}`, formData);
+      const response = await axios.post(`https://laptopdefectdetection-80r3.onrender.com${endpoint}`, formData);
       const data = image ? [response.data] : response.data;
       setResults(data);
     } catch (error) {
