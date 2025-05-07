@@ -127,12 +127,7 @@ def process_image(image_file, model):
 @app.route("/")
 def hello():
     return "Hello from Defect Detection API "
-    return "Hello"
 
-@app.route("/api/detect", methods=["POST"])
-def detect_single():
-    if "image" not in request.files or "model_name" not in request.form:
-        return jsonify({"error": "Missing image or model_name"}), 400
 @app.route("/api/detect", methods=["POST"])
 def detect_single():
     if "image" not in request.files or "model_name" not in request.form:
