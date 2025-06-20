@@ -11,6 +11,26 @@ from ultralytics import YOLO
 import numpy as np
 import cv2
 import base64
+import os
+import gdown
+
+BASE_DIR = os.path.dirname(__file__)
+MODEL_SOURCES = {
+    "resnet-50": ("models/best_model_50_4.pth", "1eBxYEaVMa8E8q8aSDVWe7d_eiAiFfIAL"),
+    "yolo":      ("models/best.pt",             "1spXE62BW4Q6OAEskmU8WxMpZGp7tvEr2")
+}
+
+def download_missing_models():
+    for model_name, (rel_path, file_id) in MODEL_SOURCES.items():
+        abs_path = os.path.join(BASE_DIR, rel_path)
+        if not os.path.exists(abs_path):
+            os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+            url = f"https://drive.google.com/uc?id={file_id}"
+            print(f"{model_name}: downloading to {abs_path} ...")
+            gdown.download(url, abs_path, quiet=False)
+            print(f"{model_name}: download complete")
+        else:
+            print(f"{model_name}: already present")
 
 app = Flask(__name__)
 CORS(app)
