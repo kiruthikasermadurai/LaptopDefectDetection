@@ -19,3 +19,4 @@ torchvision==0.19.1
 typing-extensions==4.13.0
 werkzeug==3.0.6
 zipp==3.20.2
+setuptools
